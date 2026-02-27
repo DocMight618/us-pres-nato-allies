@@ -1,0 +1,40 @@
+Required packages in R/RStudio
+library(mice)
+library(naniar)
+library(tidyverse)
+library(rio)
+library(foreign)
+library(tidylog)
+library(Hmisc)
+library(jtools)
+library(performance)  
+library(see)    
+library(patchwork) 
+library(qqplotr)
+library(plm)
+library(ggplot2)
+library(stargazer)
+library(broom)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(lmtest)
+
+Requires packages for Python/Jupyter Notebook: 
+
+import os, re, pickle
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import sys
+
+from sentence_transformers import SentenceTransformer
+from sklearn.cluster import KMeans
+from transformers import pipeline
+from tqdm import tqdm
+import nltk
+
+nltk.download("vader_lexicon")
+tqdm.pandas()
+sns.set_context("talk")
