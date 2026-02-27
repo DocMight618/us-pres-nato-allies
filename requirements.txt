@@ -1,4 +1,4 @@
-Required packages in R/RStudio
+#Required packages in R/RStudio
 library(mice)
 library(naniar)
 library(tidyverse)
@@ -20,7 +20,7 @@ library(tidyr)
 library(stringr)
 library(lmtest)
 
-Requires packages for Python/Jupyter Notebook: 
+#Required packages for Python/Jupyter Notebook: 
 
 import os, re, pickle
 import pandas as pd
