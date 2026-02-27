@@ -114,7 +114,45 @@ summary(gop2_fe)
 
 ```
 
-###sewiing the regression results together 
+##Alternative Explanations 
+
+### fri 
+
+```{r}
+fri <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) +  lag(surprise, 1) + lag(fri, 1), data = p_data, subset = EU == 1, model = "pooling")
+summary(fri)
+
+fri_fe <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(fri, 1), data = p_data, subset = EU == 1, model = "within")
+summary(fri_fe)
+
+fri2 <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(fri, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = EU == 1, model = "pooling")
+summary(fri2)
+
+fri2_fe <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(fri, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = EU == 1, model = "within")
+summary(fri2_fe)
+```
+
+
+
+
+### proximity 
+
+```{r}
+proxy_raw <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + log_proxy + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = NATO == 1, model = "pooling")
+summary(proxy_raw)
+
+proxy_EU <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + log_proxy + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = EU == 1, model = "pooling")
+summary(proxy_EU)
+
+proxy_Dem <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + log_proxy + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = party == "Democrat", model = "pooling")
+summary(proxy_Dem)
+
+proxy_GOP <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + log_proxy + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = party == "Republican", model = "pooling")
+summary(proxy_GOP)
+
+```
+
+##sewing the regression results together 
 
 ```{r}
 # =========================================================
@@ -274,136 +312,8 @@ make_tex(m_table5, "table5.tex", cov_labels_control,   controls_yesno = "Yes", f
 
 message("Done. Updated table2–table5 as .doc and .tex (T2/T3 have NO controls).")
 
-# =========================================================
-# 6) LaTeX preamble requirements (Overleaf)
-# =========================================================
-# \usepackage{setspace}
-# \usepackage{adjustbox}
-
 ```
 
-
-### Visualizations 
-```{r}
-# =========================
-# A) Robust tidying for plm
-# =========================
-tidy_plm_robust <- function(model, model_name, group_name, vcov_type = "HC1") {
-  V <- plm::vcovHC(model, type = vcov_type, cluster = "group")  # cluster by country (ccode)
-  ct <- lmtest::coeftest(model, vcov. = V)
-
-  out <- broom::tidy(ct) %>%
-    rename(term = term, estimate = estimate, std.error = std.error, statistic = statistic, p.value = p.value) %>%
-    mutate(
-      conf.low  = estimate - 1.96 * std.error,
-      conf.high = estimate + 1.96 * std.error,
-      model = model_name,
-      group = group_name
-    )
-
-  out
-}
-
-pretty_term <- function(x) {
-  x %>%
-    str_replace_all("lag\\(([^,]+), 1\\)", "\\1 (t-1)") %>%
-    str_replace_all("\\bDem\\b", "Liberal Democracy Index (t-1)") %>%
-    str_replace_all("\\bSentiment\\b", "Sentiment (t-1)") %>%
-    str_replace_all("\\bIntrastCon\\b", "Intrastate Conflict (t-1)")
-}
-
-# =========================
-# B) Build tidy dataset
-# =========================
-build_coef_df <- function(models_named_list, model_name) {
-  # models_named_list: named list where names are groups ("Full","EU","Dem","GOP")
-  bind_rows(lapply(names(models_named_list), function(g) {
-    tidy_plm_robust(models_named_list[[g]], model_name = model_name, group_name = g)
-  })) %>%
-    filter(term != "(Intercept)") %>%
-    mutate(term_pretty = pretty_term(term))
-}
-
-# =========================
-# C) Coefficient plot
-# =========================
-plot_coefs <- function(coef_df, title) {
-  ggplot(coef_df, aes(x = estimate, y = fct_reorder(term_pretty, estimate))) +
-    geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.6) +
-    geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
-    geom_point(size = 2) +
-    facet_grid(group ~ model, scales = "free_y") +
-    labs(
-      title = title,
-      x = "Coefficient (robust 95% CI)",
-      y = NULL
-    ) +
-    theme_minimal(base_size = 12)
-}
-
-# =========================
-# D) Predicted effect plot (single predictor)
-#    Uses a simple "what-if" approach:
-#    set all other regressors to their means, vary one emotion.
-# =========================
-predict_effect <- function(model, p_data, predictor,
-                           grid_n = 30, subset_filter = NULL) {
-
-  df <- as.data.frame(p_data)
-
-  # optionally restrict to the same subset you estimated on
-  if (!is.null(subset_filter)) df <- df %>% filter(!!rlang::parse_expr(subset_filter))
-
-  # get model frame terms from the fitted model
-  f <- formula(model)
-  vars_needed <- all.vars(f)
-
-  # keep only variables used in model
-  df2 <- df %>% select(any_of(vars_needed)) %>% drop_na()
-
-  # build a "typical" row = means of numeric columns
-  base_row <- df2 %>%
-    summarise(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
-
-  # grid for predictor
-  rng <- range(df2[[predictor]], na.rm = TRUE)
-  grid <- tibble::tibble(
-    val = seq(rng[1], rng[2], length.out = grid_n)
-  )
-
-  newdata <- base_row[rep(1, grid_n), , drop = FALSE]
-  newdata[[predictor]] <- grid$val
-
-  # predicted values (note: for FE models, this is "within" fitted component)
-  yhat <- as.numeric(predict(model, newdata = newdata))
-
-  tibble::tibble(
-    predictor = predictor,
-    x = grid$val,
-    yhat = yhat
-  )
-}
-
-plot_effects_4groups <- function(models_named_list, p_data, predictor, title,
-                                 subset_filter = NULL) {
-
-  df_eff <- bind_rows(lapply(names(models_named_list), function(g) {
-    predict_effect(models_named_list[[g]], p_data, predictor,
-                   subset_filter = subset_filter) %>%
-      mutate(group = g)
-  }))
-
-  ggplot(df_eff, aes(x = x, y = yhat)) +
-    geom_line() +
-    facet_wrap(~ group, scales = "free_y") +
-    labs(
-      title = title,
-      x = predictor,
-      y = "Predicted RDef"
-    ) +
-    theme_minimal(base_size = 12)
-}
-```
 
 ##Alternative Explanations 
 
@@ -441,6 +351,145 @@ summary(proxy_GOP)
 ```
 
 
+```{r}
+# =========================================================
+# Sew fri models into one table (4 columns)
+#   (1) Pooling: emotions + fri
+#   (2) FE:      emotions + fri
+#   (3) Pooling: emotions + fri + controls
+#   (4) FE:      emotions + fri + controls
+# =========================================================
+
+# Column labels for this table
+col_labels_fri <- c("Pooling", "FE (within)", "Pooling + Ctrls", "FE + Ctrls")
+
+# Covariate labels (match model order)
+cov_labels_fri_all <- c(
+  "Anger (1-year lag)",
+  "Fear (1-year lag)",
+  "Joy (1-year lag)",
+  "Sadness (1-year lag)",
+  "Disgust (1-year lag)",
+  "Surprise (1-year lag)",
+  "Fiscal Rule Index (1-year lag)",  # lag(fri, 1)
+  "Sentiment (1-year lag)",
+  "Liberal Democracy Index (1-year lag)",      # Dem
+  "Intrastate Conflict (1-year lag)"
+)
+
+# Model list (4 columns)
+m_fri <- list(fri, fri_fe, fri2, fri2_fe)
+
+# ---------- HTML (for your Rmd / html_document) ----------
+stargazer(
+  m_fri[[1]], m_fri[[2]], m_fri[[3]], m_fri[[4]],
+  type = "html",
+  column.labels = col_labels_fri,
+  column.separate = c(1, 1, 1, 1),
+  covariate.labels = cov_labels_fri_all,
+  star.cutoffs = stars_cutoffs,
+  notes = note_html,
+  notes.append = FALSE,
+  notes.align = "l",
+  add.lines = list(
+    c("Sample", "EU only", "EU only", "EU only", "EU only"),
+    c("Controls", "No", "No", "Yes", "Yes"),
+    c("Country Fixed Effects", "No", "Yes", "No", "Yes")
+  ),
+  out = "table_fri.doc"
+)
+
+# ---------- LaTeX ----------
+stargazer(
+  m_fri[[1]], m_fri[[2]], m_fri[[3]], m_fri[[4]],
+  type = "latex",
+  column.labels = col_labels_fri,
+  column.separate = c(1, 1, 1, 1),
+  covariate.labels = cov_labels_fri_all,
+  star.cutoffs = stars_cutoffs,
+  notes = note_tex,
+  notes.append = FALSE,
+  notes.align = "l",
+  add.lines = list(
+    c("Sample", "EU only", "EU only", "EU only", "EU only"),
+    c("Controls", "No", "No", "Yes", "Yes"),
+    c("Country Fixed Effects", "No", "Yes", "No", "Yes")
+  ),
+  out = "table6.tex"
+)
+
+wrap_tex_letter_single("table6.tex")
+
+message("Done. Wrote table6.doc and table6.tex")
+
+# =========================================================
+# Sew proximity models into one table (4 columns, pooling)
+#   (1) Full/NATO
+#   (2) European (EU)
+#   (3) Democrat
+#   (4) Republican
+# =========================================================
+
+# Column labels (match your main tables)
+col_labels_proxy <- c("Full Model", "European Model", "Democrat Model", "Republican Model")
+
+# Covariate labels (match model formula order)
+cov_labels_proxy_all <- c(
+  "Anger (1-year lag)",
+  "Fear (1-year lag)",
+  "Joy (1-year lag)",
+  "Sadness (1-year lag)",
+  "Disgust (1-year lag)",
+  "Surprise (1-year lag)",
+  "Geographic Proximity (log)",              # log_proxy
+  "Sentiment (1-year lag)",
+  "Liberal Democracy Index (1-year lag)",    # Dem
+  "Intrastate Conflict (1-year lag)"
+)
+
+# Model list (4 columns)
+m_proxy <- list(proxy_raw, proxy_EU, proxy_Dem, proxy_GOP)
+
+# ---------- HTML (for your Rmd / html_document) ----------
+stargazer(
+  m_proxy[[1]], m_proxy[[2]], m_proxy[[3]], m_proxy[[4]],
+  type = "html",
+  column.labels = col_labels_proxy,
+  column.separate = c(1, 1, 1, 1),
+  covariate.labels = cov_labels_proxy_all,
+  star.cutoffs = stars_cutoffs,
+  notes = note_html,
+  notes.append = FALSE,
+  notes.align = "l",
+  add.lines = list(
+    c("Controls", "Yes", "Yes", "Yes", "Yes"),
+    c("Country Fixed Effects", "No", "No", "No", "No")
+  ),
+  out = "table7.doc"
+)
+
+# ---------- LaTeX ----------
+stargazer(
+  m_proxy[[1]], m_proxy[[2]], m_proxy[[3]], m_proxy[[4]],
+  type = "latex",
+  column.labels = col_labels_proxy,
+  column.separate = c(1, 1, 1, 1),
+  covariate.labels = cov_labels_proxy_all,
+  star.cutoffs = stars_cutoffs,
+  notes = note_tex,
+  notes.append = FALSE,
+  notes.align = "l",
+  add.lines = list(
+    c("Controls", "Yes", "Yes", "Yes", "Yes"),
+    c("Country Fixed Effects", "No", "No", "No", "No")
+  ),
+  out = "table7.tex"
+)
+
+wrap_tex_letter_single("table7.tex")
+
+message("Done. Wrote table7.doc and table7.tex")
+```
 
 
 
