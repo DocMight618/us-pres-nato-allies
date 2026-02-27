@@ -33,7 +33,7 @@ This loads the data into RStudio, makes a copy of the original data, and restruc
 
 ```{r}
 setwd ("/Users/hkwang9/Library/CloudStorage/OneDrive-TheUniversityofChicago/University of Chicago/Academics/3 MACSS/Thesis/Data")
-data <- import("Transatlantic Rhetoric Dataset.dta")
+data <- import("Transatlantic Emotions Dataset.dta")
 data0 <- data
 
 #make a copy of the original data
