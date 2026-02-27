@@ -10,7 +10,7 @@ For speech corpus, please see this [CSV file](https://drive.google.com/file/d/1W
 The required packages and libraries can be found in the requirements.txt file. 
 
 ## Replication materials
-The .dta file contains the dataset. 
-The .Rmd file contains the code to replicate the results. 
-The Jupyter noptebook contains the visualizations.
+* The .dta file contains the dataset. 
+* The .Rmd file contains the code to replicate the results. 
+* The Jupyter noptebook contains the code to score the emotions, conduct topic modeling, and generate visualizations.
 
