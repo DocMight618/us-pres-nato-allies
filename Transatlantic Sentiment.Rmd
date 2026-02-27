@@ -1,0 +1,446 @@
+---
+title: "Transatlantic Sentiment"
+output: html_document
+date: "2025-11-16"
+---
+
+```{r setup, include=FALSE}
+library(mice)
+library(naniar)
+library(tidyverse)
+library(rio)
+library(foreign)
+library(tidylog)
+library(Hmisc)
+library(jtools)
+library(performance)  
+library(see)    
+library(patchwork) 
+library(qqplotr)
+library(plm)
+library(ggplot2)
+library(stargazer)
+library(broom)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(lmtest)
+```
+
+##Load the Data
+
+This loads the data into RStudio, makes a copy of the original data, and restructure the original data into a country-year level data to prepare for panel data regression with country or year fixed effects.
+
+```{r}
+setwd ("/Users/hkwang9/Library/CloudStorage/OneDrive-TheUniversityofChicago/University of Chicago/Academics/3 MACSS/Thesis/Data")
+data <- import("Transatlantic Rhetoric Dataset.dta")
+data0 <- data
+
+#make a copy of the original data
+ex_country <- c("Sweden", "Iceland")
+data1 <- data0 %>% 
+  filter(! country %in% ex_country)
+
+#restructure the data into panel data structure 
+p_data <- pdata.frame(data1, index = c("ccode", "year"))
+```
+
+##Begin the analysis
+
+###The full model
+
+```{r}
+full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1), data = p_data, subset = NATO == 1, model = "pooling")
+summary(full)
+
+full_fe <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1), data = p_data, subset = NATO == 1, model = "within")
+summary(full_fe)
+
+full2 <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = NATO == 1, model = "pooling")
+summary(full2)
+
+full2_fe <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = NATO == 1, model = "within")
+summary(full2_fe)
+
+```
+###The European Model 
+
+```{r}
+EU <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1), data = p_data, subset = EU == 1, model = "pooling")
+summary(EU)
+
+EU_fe <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1), data = p_data, subset = EU == 1, model = "within")
+summary(EU_fe)
+
+EU2 <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = EU == 1, model = "pooling")
+summary(EU2)
+
+EU2_fe <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = EU == 1, model = "within")
+summary(EU2_fe)
+```
+### The Demorcrat Model 
+
+```{r}
+dem <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1), data = p_data, subset = party == "Democrat", model = "pooling")
+summary(dem)
+
+dem_fe <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1), data = p_data, subset = party == "Democrat", model = "within")
+summary(dem_fe)
+
+dem2 <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = party == "Democrat", model = "pooling")
+summary(dem2)
+
+
+dem2_fe <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = party == "Democrat", model = "within")
+summary(dem2_fe)
+
+```
+
+### The Republican Model 
+
+```{r}
+gop <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1), data = p_data, subset = party == "Republican", model = "pooling")
+summary(gop)
+
+gop_fe <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1), data = p_data, subset = party == "Republican", model = "within")
+summary(gop_fe)
+
+gop2 <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = party == "Republican", model = "pooling")
+summary(gop2)
+
+
+gop2_fe <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = party == "Republican", model = "within")
+summary(gop2_fe)
+
+```
+
+###sewiing the regression results together 
+
+```{r}
+# =========================================================
+# 0) Shared labels / settings
+# =========================================================
+col_labels <- c("Full Model", "European Model", "Democrat Model", "Republican Model")
+
+stars_cutoffs <- c(0.1, 0.05, 0.01)
+
+note_html <- "* p < 0.1; ** p < 0.05; *** p < 0.01"
+note_tex  <- "$^{*}$ p < 0.1; \\, $^{**}$ p < 0.05; \\, $^{***}$ p < 0.01"
+
+# Labels for NO-control models (Tables 2 & 3): emotions only
+cov_labels_nocontrol <- c(
+  "Anger (1-year lag)",
+  "Fear (1-year lag)",
+  "Joy (1-year lag)",
+  "Sadness (1-year lag)",
+  "Disgust (1-year lag)",
+  "Surprise (1-year lag)"
+)
+
+# Labels for control models (Tables 4 & 5): emotions + controls
+cov_labels_control <- c(
+  "Anger (1-year lag)",
+  "Fear (1-year lag)",
+  "Joy (1-year lag)",
+  "Sadness (1-year lag)",
+  "Disgust (1-year lag)",
+  "Surprise (1-year lag)",
+  "Sentiment (1-year lag)",
+  "Liberal Democracy Index (1-year lag)",   # Dem
+  "Intrastate Conflict (1-year lag)"
+)
+
+# =========================================================
+# 1) Helper: drop controls from a model (for Tables 2 & 3)
+#    Controls = lag(Sentiment,1) + lag(Dem,1) + lag(IntrastCon,1)
+# =========================================================
+drop_controls <- function(model_obj) {
+  # Uses update() so you do not need to rewrite the full formula.
+  # If a term isn't present, update() will just ignore it safely.
+  update(
+    model_obj,
+    . ~ . -
+      lag(Sentiment, 1) -
+      lag(Dem, 1) -
+      lag(IntrastCon, 1)
+  )
+}
+
+# =========================================================
+# 2) TEX post-processing: enforce letter-width fit + 1.0 spacing
+#    Requires in LaTeX preamble:
+#      \usepackage{setspace}
+#      \usepackage{adjustbox}
+# =========================================================
+wrap_tex_letter_single <- function(tex_file) {
+  x <- readLines(tex_file, warn = FALSE)
+
+  # Insert after \centering
+  x <- gsub(
+    "\\\\centering",
+    "\\\\centering\n\\\\setstretch{1.0}\n\\\\adjustbox{max width=\\\\textwidth}{",
+    x
+  )
+
+  # Close adjustbox before \end{table}
+  x <- gsub(
+    "\\\\end\\{table\\}",
+    "}\n\\\\end{table}",
+    x
+  )
+
+  writeLines(x, tex_file)
+}
+
+# =========================================================
+# 3) Writers: DOC (HTML) + TEX (LaTeX)
+# =========================================================
+make_doc <- function(models, outfile, cov_labels, controls_yesno, fe_yesno) {
+  stargazer(
+    models[[1]], models[[2]], models[[3]], models[[4]],
+    type = "html",
+    column.labels = col_labels,
+    column.separate = c(1, 1, 1, 1),
+    covariate.labels = cov_labels,
+    star.cutoffs = stars_cutoffs,
+    notes = note_html,
+    notes.append = FALSE,
+    notes.align = "l",
+    add.lines = list(
+      c("Controls", controls_yesno, controls_yesno, controls_yesno, controls_yesno),
+      c("Country Fixed Effects", fe_yesno, fe_yesno, fe_yesno, fe_yesno)
+    ),
+    out = outfile
+  )
+}
+
+make_tex <- function(models, outfile, cov_labels, controls_yesno, fe_yesno) {
+  stargazer(
+    models[[1]], models[[2]], models[[3]], models[[4]],
+    type = "latex",
+    column.labels = col_labels,
+    column.separate = c(1, 1, 1, 1),
+    covariate.labels = cov_labels,
+    star.cutoffs = stars_cutoffs,
+    notes = note_tex,
+    notes.append = FALSE,
+    notes.align = "l",
+    add.lines = list(
+      c("Controls", controls_yesno, controls_yesno, controls_yesno, controls_yesno),
+      c("Country Fixed Effects", fe_yesno, fe_yesno, fe_yesno, fe_yesno)
+    ),
+    out = outfile
+  )
+
+  wrap_tex_letter_single(outfile)
+}
+
+# =========================================================
+# 4) Build model sets
+#    IMPORTANT CHANGE:
+#      Table 2 & 3 "Full Model" will be re-estimated WITHOUT controls.
+# =========================================================
+
+# --- Tables 2 & 3: NO controls in ANY column ---
+full_nc    <- drop_controls(full)
+full_fe_nc <- drop_controls(full_fe)
+
+m_table2 <- list(full_nc,    EU,    dem,    gop)      # no control, no FE
+m_table3 <- list(full_fe_nc, EU_fe, dem_fe, gop_fe)  # no control, FE
+
+# --- Tables 4 & 5: WITH controls (keep as your existing objects) ---
+m_table4 <- list(full2,    EU2,    dem2,    gop2)       # control, no FE
+m_table5 <- list(full2_fe, EU2_fe, dem2_fe, gop2_fe)    # control, FE
+
+# =========================================================
+# 5) Generate DOC + TEX outputs
+# =========================================================
+
+# Table 2: no control, no FE
+make_doc(m_table2, "table2.doc", cov_labels_nocontrol, controls_yesno = "No",  fe_yesno = "No")
+make_tex(m_table2, "table2.tex", cov_labels_nocontrol, controls_yesno = "No",  fe_yesno = "No")
+
+# Table 3: no control, FE
+make_doc(m_table3, "table3.doc", cov_labels_nocontrol, controls_yesno = "No",  fe_yesno = "Yes")
+make_tex(m_table3, "table3.tex", cov_labels_nocontrol, controls_yesno = "No",  fe_yesno = "Yes")
+
+# Table 4: controls, no FE
+make_doc(m_table4, "table4.doc", cov_labels_control,   controls_yesno = "Yes", fe_yesno = "No")
+make_tex(m_table4, "table4.tex", cov_labels_control,   controls_yesno = "Yes", fe_yesno = "No")
+
+# Table 5: controls, FE
+make_doc(m_table5, "table5.doc", cov_labels_control,   controls_yesno = "Yes", fe_yesno = "Yes")
+make_tex(m_table5, "table5.tex", cov_labels_control,   controls_yesno = "Yes", fe_yesno = "Yes")
+
+message("Done. Updated table2–table5 as .doc and .tex (T2/T3 have NO controls).")
+
+# =========================================================
+# 6) LaTeX preamble requirements (Overleaf)
+# =========================================================
+# \usepackage{setspace}
+# \usepackage{adjustbox}
+
+```
+
+
+### Visualizations 
+```{r}
+# =========================
+# A) Robust tidying for plm
+# =========================
+tidy_plm_robust <- function(model, model_name, group_name, vcov_type = "HC1") {
+  V <- plm::vcovHC(model, type = vcov_type, cluster = "group")  # cluster by country (ccode)
+  ct <- lmtest::coeftest(model, vcov. = V)
+
+  out <- broom::tidy(ct) %>%
+    rename(term = term, estimate = estimate, std.error = std.error, statistic = statistic, p.value = p.value) %>%
+    mutate(
+      conf.low  = estimate - 1.96 * std.error,
+      conf.high = estimate + 1.96 * std.error,
+      model = model_name,
+      group = group_name
+    )
+
+  out
+}
+
+pretty_term <- function(x) {
+  x %>%
+    str_replace_all("lag\\(([^,]+), 1\\)", "\\1 (t-1)") %>%
+    str_replace_all("\\bDem\\b", "Liberal Democracy Index (t-1)") %>%
+    str_replace_all("\\bSentiment\\b", "Sentiment (t-1)") %>%
+    str_replace_all("\\bIntrastCon\\b", "Intrastate Conflict (t-1)")
+}
+
+# =========================
+# B) Build tidy dataset
+# =========================
+build_coef_df <- function(models_named_list, model_name) {
+  # models_named_list: named list where names are groups ("Full","EU","Dem","GOP")
+  bind_rows(lapply(names(models_named_list), function(g) {
+    tidy_plm_robust(models_named_list[[g]], model_name = model_name, group_name = g)
+  })) %>%
+    filter(term != "(Intercept)") %>%
+    mutate(term_pretty = pretty_term(term))
+}
+
+# =========================
+# C) Coefficient plot
+# =========================
+plot_coefs <- function(coef_df, title) {
+  ggplot(coef_df, aes(x = estimate, y = fct_reorder(term_pretty, estimate))) +
+    geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.6) +
+    geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+    geom_point(size = 2) +
+    facet_grid(group ~ model, scales = "free_y") +
+    labs(
+      title = title,
+      x = "Coefficient (robust 95% CI)",
+      y = NULL
+    ) +
+    theme_minimal(base_size = 12)
+}
+
+# =========================
+# D) Predicted effect plot (single predictor)
+#    Uses a simple "what-if" approach:
+#    set all other regressors to their means, vary one emotion.
+# =========================
+predict_effect <- function(model, p_data, predictor,
+                           grid_n = 30, subset_filter = NULL) {
+
+  df <- as.data.frame(p_data)
+
+  # optionally restrict to the same subset you estimated on
+  if (!is.null(subset_filter)) df <- df %>% filter(!!rlang::parse_expr(subset_filter))
+
+  # get model frame terms from the fitted model
+  f <- formula(model)
+  vars_needed <- all.vars(f)
+
+  # keep only variables used in model
+  df2 <- df %>% select(any_of(vars_needed)) %>% drop_na()
+
+  # build a "typical" row = means of numeric columns
+  base_row <- df2 %>%
+    summarise(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+
+  # grid for predictor
+  rng <- range(df2[[predictor]], na.rm = TRUE)
+  grid <- tibble::tibble(
+    val = seq(rng[1], rng[2], length.out = grid_n)
+  )
+
+  newdata <- base_row[rep(1, grid_n), , drop = FALSE]
+  newdata[[predictor]] <- grid$val
+
+  # predicted values (note: for FE models, this is "within" fitted component)
+  yhat <- as.numeric(predict(model, newdata = newdata))
+
+  tibble::tibble(
+    predictor = predictor,
+    x = grid$val,
+    yhat = yhat
+  )
+}
+
+plot_effects_4groups <- function(models_named_list, p_data, predictor, title,
+                                 subset_filter = NULL) {
+
+  df_eff <- bind_rows(lapply(names(models_named_list), function(g) {
+    predict_effect(models_named_list[[g]], p_data, predictor,
+                   subset_filter = subset_filter) %>%
+      mutate(group = g)
+  }))
+
+  ggplot(df_eff, aes(x = x, y = yhat)) +
+    geom_line() +
+    facet_wrap(~ group, scales = "free_y") +
+    labs(
+      title = title,
+      x = predictor,
+      y = "Predicted RDef"
+    ) +
+    theme_minimal(base_size = 12)
+}
+```
+
+##Alternative Explanations 
+
+### fri 
+
+```{r}
+fri <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) +  lag(surprise, 1) + lag(fri, 1), data = p_data, subset = EU == 1, model = "pooling")
+summary(fri)
+
+fri_fe <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(fri, 1), data = p_data, subset = EU == 1, model = "within")
+summary(fri)
+
+fri2 <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(fri, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = EU == 1, model = "pooling")
+summary(fri2)
+
+fri2_fe <- full <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + lag(fri, 1) + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = EU == 1, model = "within")
+summary(fri2_fe)
+```
+
+### proximity 
+
+```{r}
+proxy_raw <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + log_proxy + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = NATO == 1, model = "pooling")
+summary(proxy_raw)
+
+proxy_EU <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + log_proxy + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = EU == 1, model = "pooling")
+summary(proxy_EU)
+
+proxy_Dem <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + log_proxy + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = party == "Democrat", model = "pooling")
+summary(proxy_Dem)
+
+proxy_GOP <- plm(RDef ~ lag(anger, 1) + lag(fear, 1) + lag(joy, 1) + lag(sadness, 1) + lag(disgust, 1) + lag(surprise, 1) + log_proxy + lag(Sentiment, 1) + lag(Dem, 1) + lag(IntrastCon, 1), data = p_data, subset = party == "Republican", model = "pooling")
+summary(proxy_GOP)
+
+```
+
+
+
+
+
